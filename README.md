@@ -66,6 +66,8 @@ MoSPI_CPI/
 ├── SQL_COMMAND.sql
 ├── .env.example
 ├── pyproject.toml
+├── tests/
+│   └── test_cleaning.py
 └── README.md
 ~~~
 

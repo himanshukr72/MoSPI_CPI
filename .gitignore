@@ -1,2 +1,36 @@
-Data/ 
-Data 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments and local tooling
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+desktop.ini
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local/generated data
+Data/
+data/
+outputs/
+*.tmp
+
+# Power BI local cache
+*.pbi
+
+# Secrets / local connection files
+*.pem
+*.key

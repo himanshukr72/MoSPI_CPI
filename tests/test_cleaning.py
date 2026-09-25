@@ -1,6 +1,4 @@
 import pandas as pd
-import pytest
-
 from mospi_cpi.cleaning import clean_cpi_frame
 
 

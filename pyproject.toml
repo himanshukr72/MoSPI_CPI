@@ -24,7 +24,7 @@ mospi-cpi = "mospi_cpi.main:main"
 requires = ["uv_build>=0.8.0,<0.13.0"]
 build-backend = "uv_build"
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pytest>=8.0",
 ]

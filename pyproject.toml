@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mospi-cpi = "mospi_cpi:main"
+mospi-cpi = "mospi_cpi.main:main"
 
 [build-system]
 requires = ["uv_build>=0.8.0,<0.13.0"]

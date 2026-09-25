@@ -1,95 +1,197 @@
-📈 Inflation-Trends
+# MoSPI CPI — Inflation Analytics & Prediction
 
-This project provides a comprehensive analysis of inflation trends using Consumer Price Index (CPI) data from the Ministry of Statistics and Programme Implementation (MoSPI), Government of India. It integrates Python, SQL, and Power BI into a unified data pipeline for real-time insights.
+An end-to-end analysis of India's Consumer Price Index (CPI) using data from the **Ministry of Statistics and Programme Implementation (MoSPI), Government of India**.
 
-🏆 Project Recognition
+The project combines **Python, PostgreSQL/SQL, Power BI and machine learning** to turn CPI observations into an analytical workflow and interactive dashboard.
 
-This project was awarded a Consolation Prize in a Data Visualization Hackathon conducted by the Government of India in collaboration with MoSPI.
+> **Project recognition:** the repository documents that this work received a Consolation Prize in a Government of India/MoSPI data-visualization hackathon.
 
-📂 Project Contents
+## What this project does
 
-📓 MoSPI_final.ipynb → Jupyter Notebook for data cleaning, preprocessing, and exploratory data analysis (EDA) using pandas & numpy.
+- Cleans and validates CPI observations with Python/pandas.
+- Organizes observations by year, month, state, sector, group and subgroup.
+- Loads the analytical dataset into PostgreSQL.
+- Uses SQL for year-wise, sector-wise and group-wise aggregations.
+- Connects Power BI to PostgreSQL using DirectQuery.
+- Experiments with temporal CPI prediction, treating 2020–2021 separately from the main training period.
+- Keeps notebooks available as an audit trail for the analysis.
 
-🗄️ SQL_COMMAND.sql → SQL scripts for creating relational tables, inserting cleaned data, and performing aggregated calculations.
+## Architecture
 
-📊 CPI_Dashboard_MoSPI_GOI.pbix / .pbit → Interactive Power BI dashboard visualizing CPI inflation trends.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-📑 README.md → Documentation of the project workflow, methodology, and usage.
+~~~text
+MoSPI data
+   |
+   v
+Python cleaning / validation
+   |
+   v
+PostgreSQL
+   |------------------|
+   v                  v
+SQL analysis      Power BI DirectQuery
+                      |
+                      v
+               CPI Dashboard
 
-📊 Data Overview
+Historical CPI
+   |
+   v
+Temporal ML experiments
+   |
+   v
+Prediction + evaluation
+~~~
 
-The primary dataset is cpi Group data.csv, sourced from MoSPI (Government of India).
-Key columns include:
+## Repository structure
 
-📌 BaseYear → Reference year for CPI calculations.
+~~~text
+MoSPI_CPI/
+├── docs/
+│   └── ARCHITECTURE.md
+├── notebooks/
+│   ├── MoSPI_final_12-24.ipynb
+│   ├── cpi_25_pred_ml.ipynb
+│   ├── data_25-26.ipynb
+│   ├── merge_cpi_notebook.ipynb
+│   └── merged_cpi_cal_index_25.ipynb
+├── src/
+│   └── mospi_cpi/
+│       ├── __init__.py
+│       ├── cleaning.py
+│       └── database.py
+├── CPI_Dashboard_MoSPI_GOI.pbix
+├── CPI_Dashboard_MoSPI_GOI.pbit
+├── SQL_COMMAND.sql
+├── .env.example
+├── pyproject.toml
+└── README.md
+~~~
 
-📅 Year & Month → Temporal resolution of data.
+Local environments, credentials and generated files should not be committed.
 
-🏙️ State & Sector → Regional and sectoral analysis (Combined, Rural, Urban).
+## Data
 
-🏷️ Group & SubGroup → Categorization of goods & services.
+The analytical data contains fields such as:
 
-📈 Index → CPI value.
+| Field | Meaning |
+|---|---|
+| `BYear` | CPI base year |
+| `Year_i` | Observation year |
+| `Month_i` | Observation month |
+| `State_i` | State/region |
+| `Sector` | Combined / Rural / Urban |
+| `Group_i` | CPI group |
+| `SubGroup` | CPI subgroup |
+| `Index_i` | CPI index |
+| `Inflation` | Inflation measure |
 
-💹 Inflation (%) → Annual inflation metric.
+The historical analytical dataset used in the notebooks contains roughly **216k observations**.
 
-⚠️ Missing values (*) are cleaned and imputed in the Python Notebook.
+## Tech stack
 
-🔎 Analysis and Visualization Strategy
+**Data:** Python, pandas, NumPy  
+**Database:** PostgreSQL, SQLAlchemy, psycopg2  
+**BI:** Power BI, DirectQuery  
+**ML:** scikit-learn and tree-based modelling experiments  
+**Environment:** uv / pyproject.toml
 
-🐍 Python-based Analysis
+## Reproducibility
 
-Used pandas & numpy in MoSPI_final.ipynb for cleaning and exploratory analysis.
+### 1. Clone
 
-🛢️ SQL Database Integration
+~~~bash
+git clone https://github.com/himanshukr72/MoSPI_CPI.git
+cd MoSPI_CPI
+~~~
 
-Implemented via SQL_COMMAND.sql to create a PostgreSQL database.
+### 2. Environment
 
-Efficient storage, queries, and aggregation for large datasets.
+~~~bash
+uv sync
+~~~
 
-📊 Real-Time Power BI Dashboard
+A standard Python virtual environment can also be used with the dependencies in `pyproject.toml`.
 
-Connected with DirectQuery for live data analysis.
+### 3. PostgreSQL
 
-✅ No data storage in Power BI server (lightweight and scalable).
+Copy the template:
 
-🔄 Real-time insights directly from the SQL database.
+~~~bash
+cp .env.example .env
+~~~
 
-⚡ Getting Started
+Then configure your own connection:
 
-Clone the Repository
+~~~text
+DATABASE_URL=postgresql+psycopg2://USER:PASSWORD@HOST:5432/DATABASE
+~~~
 
-git clone [repository URL]
+Never commit `.env` or database credentials.
 
+### 4. Analysis
 
-Run Data Processing
+The principal historical analysis is in:
 
-Open MoSPI_final.ipynb in Jupyter Notebook or JupyterLab.
+`notebooks/MoSPI_final_12-24.ipynb`
 
-Execute the preprocessing steps.
+The prediction experiment is in:
 
-Setup Database
+`notebooks/cpi_25_pred_ml.ipynb`
 
-Run SQL scripts from SQL_COMMAND.sql to create and populate PostgreSQL tables.
+### 5. SQL and Power BI
 
-Launch Dashboard
+Run `SQL_COMMAND.sql` against your PostgreSQL database.
 
-Install Power BI Desktop.
+Open `CPI_Dashboard_MoSPI_GOI.pbix` in Power BI Desktop and configure the PostgreSQL connection for your environment. The `.pbit` template is also included.
 
-Open CPI_Dashboard_MoSPI_GOI.pbix.
+## ML methodology
 
-Connect directly to PostgreSQL for real-time insights.
+The prediction notebook treats CPI as a temporal problem instead of randomly splitting observations.
 
-✅ Conclusion
+The current experiment:
 
-This project demonstrates a complete data pipeline:
+- trains on historical observations,
+- evaluates a later year as a holdout,
+- treats 2020–2021 separately because of the COVID-period disruption,
+- reports regression metrics for held-out observations.
 
-📥 Raw data collection (MoSPI CPI dataset).
+This is an **experimental forecasting workflow**, not a claim to reproduce official CPI forecasts. It should be interpreted alongside simple baselines and temporal validation.
 
-🧹 Cleaning & preprocessing (Python).
+## Dashboard
 
-🛢️ Structured storage & queries (PostgreSQL).
+The Power BI model supports interactive analysis across:
 
-📊 Real-time dashboards (Power BI with DirectQuery).
+- year/month
+- state
+- rural/urban/combined sector
+- CPI group
+- CPI subgroup
 
-By combining these technologies, it transforms raw economic data into actionable insights, providing a scalable and dynamic solution for monitoring inflation trends.
+The Power BI files are included so the report and data model can be inspected locally.
+
+## Security
+
+No database password, API key or local credential belongs in this repository.
+
+Database configuration is now expected through `DATABASE_URL`. If a credential was previously committed to a public repository, rotate it before reusing it.
+
+## Roadmap
+
+- automated data-quality tests
+- scripted ingestion pipeline
+- temporal cross-validation and baseline models
+- model comparison and error analysis
+- CI checks for formatting, tests and accidental secrets
+- dashboard screenshots and selected analytical findings
+
+## Attribution
+
+CPI data is sourced from MoSPI. Check applicable MoSPI/Government of India terms before redistributing source data outside this project.
+
+## Author
+
+**Himanshu Kumar**  
+Birla Institute of Technology, Mesra  
+Quantitative Economics & Data Science

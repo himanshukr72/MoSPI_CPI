@@ -34,3 +34,5 @@ outputs/
 # Secrets / local connection files
 *.pem
 *.key
+data
+Old Group data

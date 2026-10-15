@@ -35,4 +35,4 @@ outputs/
 *.pem
 *.key
 data
-Old Group data
+/Old Group data/

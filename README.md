@@ -1,199 +1,252 @@
-# MoSPI CPI — Inflation Analytics & Prediction
+# Indian CPI & Inflation Forecasting (2014–2025)
 
-An end-to-end analysis of India's Consumer Price Index (CPI) using data from the **Ministry of Statistics and Programme Implementation (MoSPI), Government of India**.
+## Overview
 
-The project combines **Python, PostgreSQL/SQL, Power BI and machine learning** to turn CPI observations into an analytical workflow and interactive dashboard.
+This project focuses on analyzing India's Consumer Price Index (CPI) data and forecasting inflation using machine learning techniques. It combines historical CPI datasets, standardizes data across different base years, engineers time-series features, and predicts inflation using tree-based regression models.
 
-> **Project recognition:** the repository documents that this work received a Consolation Prize in a Government of India/MoSPI data-visualization hackathon.
+The project uses historical CPI observations from the Ministry of Statistics and Programme Implementation (MoSPI) and explores machine learning approaches such as **LightGBM and Random Forest** for inflation prediction.
 
-## What this project does
+## Objectives
 
-- Cleans and validates CPI observations with Python/pandas.
-- Organizes observations by year, month, state, sector, group and subgroup.
-- Loads the analytical dataset into PostgreSQL.
-- Uses SQL for year-wise, sector-wise and group-wise aggregations.
-- Connects Power BI to PostgreSQL using DirectQuery.
-- Experiments with temporal CPI prediction, treating 2020–2021 separately from the main training period.
-- Keeps notebooks available as an audit trail for the analysis.
+- Clean and standardize historical CPI data.
+- Integrate CPI datasets across different base years.
+- Calculate and forecast inflation using historical CPI information.
+- Engineer seasonal, lagged, and categorical features for prediction.
+- Train regression models to predict inflation for 2025.
+- Reconstruct CPI index values from predicted inflation.
+- Establish a framework for comparing different machine learning models.
 
-## Architecture
+## Dataset
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The project uses Indian CPI data containing information such as:
 
-~~~text
-MoSPI data
-   |
-   v
-Python cleaning / validation
-   |
-   v
-PostgreSQL
-   |------------------|
-   v                  v
-SQL analysis      Power BI DirectQuery
-                      |
-                      v
-               CPI Dashboard
-
-Historical CPI
-   |
-   v
-Temporal ML experiments
-   |
-   v
-Prediction + evaluation
-~~~
-
-## Repository structure
-
-~~~text
-MoSPI_CPI/
-├── docs/
-│   └── ARCHITECTURE.md
-├── notebooks/
-│   ├── MoSPI_final_12-24.ipynb
-│   ├── cpi_25_pred_ml.ipynb
-│   ├── data_25-26.ipynb
-│   ├── merge_cpi_notebook.ipynb
-│   └── merged_cpi_cal_index_25.ipynb
-├── src/
-│   └── mospi_cpi/
-│       ├── __init__.py
-│       ├── cleaning.py
-│       └── database.py
-├── CPI_Dashboard_MoSPI_GOI.pbix
-├── CPI_Dashboard_MoSPI_GOI.pbit
-├── SQL_COMMAND.sql
-├── .env.example
-├── pyproject.toml
-├── tests/
-│   └── test_cleaning.py
-└── README.md
-~~~
-
-Local environments, credentials and generated files should not be committed.
-
-## Data
-
-The analytical data contains fields such as:
-
-| Field | Meaning |
+| Feature | Description |
 |---|---|
-| `BYear` | CPI base year |
+| `BYear` | CPI index base-year information |
 | `Year_i` | Observation year |
 | `Month_i` | Observation month |
-| `State_i` | State/region |
-| `Sector` | Combined / Rural / Urban |
-| `Group_i` | CPI group |
-| `SubGroup` | CPI subgroup |
-| `Index_i` | CPI index |
-| `Inflation` | Inflation measure |
+| `State_i` | State or geographical category |
+| `Sector` | Sector classification |
+| `Group_i` | CPI expenditure group |
+| `SubGroup` | CPI expenditure subgroup |
+| `Index_i` | CPI index value |
+| `Inflation` | Inflation rate (%) |
 
-The historical analytical dataset used in the notebooks contains roughly **216k observations**.
+The data covers historical observations and is used to generate predictions for 2025.
 
-## Tech stack
+**Data source:** Ministry of Statistics and Programme Implementation (MoSPI), Government of India.
 
-**Data:** Python, pandas, NumPy  
-**Database:** PostgreSQL, SQLAlchemy, psycopg2  
-**BI:** Power BI, DirectQuery  
-**ML:** scikit-learn and tree-based modelling experiments  
-**Environment:** uv / pyproject.toml
+## Project Workflow
 
-## Reproducibility
+### 1. Data Cleaning and Standardization
 
-### 1. Clone
+- Standardized categorical labels and removed unwanted whitespace.
+- Converted year, CPI index, and inflation columns to numeric types.
+- Standardized month names and established chronological ordering.
+- Prepared consistent group, subgroup, state, and sector identifiers.
 
-~~~bash
-git clone https://github.com/himanshukr72/MoSPI_CPI.git
-cd MoSPI_CPI
-~~~
+### 2. CPI Dataset Integration
 
-### 2. Environment
+- Combined historical CPI observations with newer CPI data.
+- Standardized classifications to improve consistency across datasets.
+- Applied base-year linking and rebasing procedures where required to maintain comparability between CPI series.
 
-~~~bash
-uv sync
-~~~
+### 3. Feature Engineering
 
-A standard Python virtual environment can also be used with the dependencies in `pyproject.toml`.
+The forecasting pipeline constructs several features from historical CPI and inflation observations.
 
-### 3. PostgreSQL
+**Seasonal features**
 
-Copy the template:
+- `sin_month`
+- `cos_month`
 
-~~~bash
-cp .env.example .env
-~~~
+These represent the cyclical nature of monthly observations.
 
-Then configure your own connection:
+**Lagged features**
 
-~~~text
-DATABASE_URL=postgresql+psycopg2://USER:PASSWORD@HOST:5432/DATABASE
-~~~
+- `Inflation_Lag_12M`: Inflation from the corresponding month in the previous year.
+- `Inflation_Lag_24M`: Inflation from the corresponding month two years earlier.
+- `Index_Lag_12M`: CPI index from the corresponding month in the previous year.
+- `Log_Index_Lag_12M`: Log-transformed lagged CPI index.
+- `Subgroup_Macro_Mean_Lag_12M`: Lagged subgroup-level inflation information.
 
-Never commit `.env` or database credentials.
+**Categorical features**
 
-### 4. Analysis
+- Month
+- State
+- Sector
+- Group
+- Subgroup
 
-The principal historical analysis is in:
+These features help the models learn differences in inflation patterns across geographical areas and consumption categories.
 
-`notebooks/MoSPI_final_12-24.ipynb`
+### 4. Target Preparation
 
-The prediction experiment is in:
+The target variable is `Inflation_Target`, derived from the inflation column.
 
-`notebooks/cpi_25_pred_ml.ipynb`
+The current pipeline clips target values at the 1st and 99th percentiles to reduce the influence of extreme observations during model training.
 
-### 5. SQL and Power BI
+### 5. Model Training
 
-Run `SQL_COMMAND.sql` against your PostgreSQL database.
+The models use observations from **2016–2024**, excluding 2020 and 2021, according to the current training configuration.
 
-Open `CPI_Dashboard_MoSPI_GOI.pbix` in Power BI Desktop and configure the PostgreSQL connection for your environment. The `.pbit` template is also included.
+#### LightGBM Regressor
 
-## ML methodology
+LightGBM is a gradient boosting algorithm that builds decision trees sequentially to improve prediction accuracy.
 
-The prediction notebook treats CPI as a temporal problem instead of randomly splitting observations.
+The implementation uses:
 
-The current experiment:
+- Huber loss objective
+- 350 boosting iterations
+- Learning rate of 0.03
+- Maximum tree depth of 6
+- 31 leaves per tree
 
-- trains on historical observations,
-- evaluates a later year as a holdout,
-- treats 2020–2021 separately because of the COVID-period disruption,
-- reports regression metrics for held-out observations.
+#### Random Forest Regressor
 
-This is an **experimental forecasting workflow**, not a claim to reproduce official CPI forecasts. It should be interpreted alongside simple baselines and temporal validation.
+Random Forest is an ensemble learning algorithm that averages predictions from multiple decision trees.
 
-## Dashboard
+The implementation uses:
 
-The Power BI model supports interactive analysis across:
+- 300 decision trees
+- Maximum depth of 15
+- Minimum 10 samples required for a split
+- Minimum 3 samples per leaf
+- Square-root feature sampling
+- Fixed random seed for reproducibility
 
-- year/month
-- state
-- rural/urban/combined sector
-- CPI group
-- CPI subgroup
+Categorical variables are encoded using `OrdinalEncoder`, while the numerical features are passed through the preprocessing pipeline.
 
-The Power BI files are included so the report and data model can be inspected locally.
+### 6. Inflation Forecasting for 2025
 
-## Security
+After training, the selected model predicts inflation for observations belonging to 2025.
 
-No database password, API key or local credential belongs in this repository.
+The predicted inflation values are inserted into the corresponding records.
 
-Database configuration is now expected through `DATABASE_URL`. If a credential was previously committed to a public repository, rotate it before reusing it.
+### 7. CPI Index Reconstruction
 
-## Roadmap
+The pipeline reconstructs the CPI index using the predicted inflation rate and the corresponding index from the previous year:
 
-- automated data-quality tests
-- scripted ingestion pipeline
-- temporal cross-validation and baseline models
-- model comparison and error analysis
-- CI checks for formatting, tests and accidental secrets
-- dashboard screenshots and selected analytical findings
+\[
+CPI_t=CPI_{t-12}\left(1+\frac{\pi_t}{100}\right)
+\]
 
-## Attribution
+where:
 
-CPI data is sourced from MoSPI. Check applicable MoSPI/Government of India terms before redistributing source data outside this project.
+- \(CPI_t\) is the reconstructed CPI index.
+- \(CPI_{t-12}\) is the CPI index for the corresponding month in the previous year.
+- \(\pi_t\) is the predicted year-on-year inflation rate.
 
-## Author
+This provides a consistent way to derive index estimates from predicted inflation, provided both series use compatible definitions and base-year conventions.
 
-**Himanshu Kumar**  
-Birla Institute of Technology, Mesra  
-Quantitative Economics & Data Science
+## Technologies Used
+
+- **Python** — Core programming language
+- **Pandas** — Data cleaning and manipulation
+- **NumPy** — Numerical computations and seasonal feature engineering
+- **Scikit-learn** — Random Forest, preprocessing, and model pipelines
+- **LightGBM** — Gradient boosting regression
+- **Jupyter Notebook** — Experimentation and analysis
+- **Matplotlib** — Data visualization, where used
+
+## Model Comparison
+
+The project can be extended to compare models using a common chronological validation period.
+
+Recommended evaluation metrics include:
+
+| Metric | Purpose |
+|---|---|
+| MAE | Measures average absolute prediction error |
+| RMSE | Penalizes larger prediction errors |
+| MAPE | Measures percentage prediction error, where actual values are nonzero |
+| \(R^2\) | Measures explained variation in a validation dataset |
+
+A fair comparison requires the same forecast horizon, target definition, and validation observations for every model.
+
+## Repository Structure
+
+A suggested repository structure is:
+
+```text
+CPI-Inflation-Forecasting/
+│
+├── notebooks/
+│   ├── data_cleaning.ipynb
+│   ├── cpi_integration.ipynb
+│   ├── linear_regression.ipynb
+│   ├── random_forest.ipynb
+│   └── lightgbm_forecasting.ipynb
+│
+├── data/
+│   └── README.md
+│
+├── README.md
+├── requirements.txt
+└── .gitignore
+```
+
+Adjust the notebook names to match the actual files in your repository.
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone <YOUR_REPOSITORY_URL>
+cd CPI-Inflation-Forecasting
+```
+
+Create a virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+Install the required packages:
+
+```bash
+pip install numpy pandas scikit-learn lightgbm matplotlib jupyter openpyxl
+```
+
+Launch Jupyter Notebook:
+
+```bash
+jupyter notebook
+```
+
+Open the relevant notebook and run the cells in order.
+
+## Important Considerations
+
+- Time-series features must be constructed without using future observations.
+- Training and validation should be separated chronologically to avoid data leakage.
+- Excluding 2020 and 2021 from training is a modelling choice that should be justified and evaluated against alternative specifications.
+- Missing lagged features and fallback index values should be reviewed carefully.
+- Predictions should be validated against actual observations before being used for substantive conclusions.
+- The current 2025 predictions are model estimates, not official MoSPI figures.
+
+## Future Improvements
+
+- Compare Linear Regression, Random Forest, LightGBM, XGBoost, and CatBoost.
+- Incorporate ARIMA and SARIMA as econometric forecasting baselines.
+- Explore ADF, Phillips–Perron, and seasonal unit-root tests.
+- Apply rolling-origin or expanding-window validation.
+- Perform hyperparameter tuning and feature-importance analysis.
+- Investigate LSTM and Transformer-based time-series forecasting.
+
+## Conclusion
+
+This project develops a data-driven pipeline for Indian CPI and inflation analysis, from historical data preparation and integration to feature engineering, machine learning-based inflation prediction, and CPI index reconstruction.
+
+It provides a foundation for comparing econometric and machine learning approaches to inflation forecasting using official CPI data.
+
+## Acknowledgements
+
+Data source: Ministry of Statistics and Programme Implementation (MoSPI), Government of India.

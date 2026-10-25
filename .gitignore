@@ -36,3 +36,9 @@ outputs/
 *.key
 data
 /Old Group data/
+
+
+
+.env
+.env.*
+!.env.example
